@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doodle & Color Kids Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Fredoka', 'Quicksand', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        .bouncy-btn {
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+        }
+        .bouncy-btn:hover {
+            transform: scale(1.05) translateY(-2px);
+        }
+        .bouncy-btn:active {
+            transform: scale(0.95) translateY(2px);
+        }
+        /* Custom scrollbar styling for playful aesthetic */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FEF3C7;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #F59E0B;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D97706;
+        }
+        .canvas-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-amber-50 text-slate-800 min-h-screen flex flex-col overflow-x-hidden selection:bg-yellow-200">
+
+    <!-- Header Navbar -->
+    <header class="bg-yellow-400 border-b-4 border-yellow-500 px-4 py-3 shadow-md flex justify-between items-center z-10">
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="goHome()">
+            <div class="bg-white p-2 rounded-2xl shadow-inner transform -rotate-3">
+                <i class="fa-solid fa-wand-magic-sparkles text-3xl text-pink-500 animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-indigo-900 tracking-wide drop-shadow-sm">DoodleJoy!</h1>
+                <p class="text-xs text-indigo-800 font-bold hidden sm:block">Step-by-Step Drawing & Coloring Studio</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <button id="soundToggleBtn" onclick="toggleSound()" class="bouncy-btn bg-pink-500 hover:bg-pink-600 text-white font-bold p-3 rounded-2xl shadow-md border-b-4 border-pink-700 flex items-center justify-center">
+                <i id="soundIcon" class="fa-solid fa-volume-high text-xl"></i>
+            </button>
+            <button onclick="goHome()" class="bouncy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 md:py-2.5 rounded-2xl shadow-md border-b-4 border-emerald-700 flex items-center space-x-2">
+                <i class="fa-solid fa-grid-2 text-xl"></i>
+                <span class="hidden md:inline">Library</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col p-3 md:p-6 max-w-7xl mx-auto w-full">
+
+        <!-- VIEW 1: SELECTION GALLERY -->
+        <section id="galleryView" class="flex-1 flex flex-col space-y-6">
+            <!-- Theme Filter Banner -->
+            <div class="flex flex-col sm:flex-row justify-between items-center bg-indigo-600 rounded-3xl p-4 md:p-6 text-white shadow-lg border-b-8 border-indigo-800 space-y-4 sm:space-y-0">
+                <div>
+                    <h2 class="text-2xl md:text-4xl font-extrabold text-yellow-300">Choose Something to Draw! 🎨</h2>
+                    <p class="text-indigo-100 text-sm md:text-base mt-1">Pick your favorite animal or fruit to start step-by-step!</p>
+                </div>
+                <!-- Category Tabs -->
+                <div class="flex bg-indigo-800 p-1.5 rounded-2xl border border-indigo-500 space-x-2">
+                    <button id="tabAll" onclick="filterCategory('all')" class="category-tab active bg-yellow-400 text-indigo-950 px-4 py-2 rounded-xl font-bold transition shadow-sm">
+                        All (50+)
+                    </button>
+                    <button id="tabAnimals" onclick="filterCategory('animals')" class="category-tab text-white hover:bg-indigo-700 px-4 py-2 rounded-xl font-bold transition">
+                        🐶 Animals (25)
+                    </button>
+                    <button id="tabFruits" onclick="filterCategory('fruits')" class="category-tab text-white hover:bg-indigo-700 px-4 py-2 rounded-xl font-bold transition">
+                        🍎 Fruits & Veggies (25)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="flex justify-between items-center bg-white rounded-2xl p-3 shadow border-2 border-amber-200">
+                <div class="relative flex-1 max-w-md">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="searchInput" oninput="searchDoodles()" placeholder="Search Lion, Apple, Panda..." class="w-full pl-10 pr-4 py-2 rounded-xl bg-amber-50 border border-amber-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-slate-700 font-bold">
+                </div>
+                <div id="doodleCountBadge" class="text-xs md:text-sm font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300 ml-2">
+                    Showing 50 items
+                </div>
+            </div>
+
+            <!-- Doodle Cards Grid -->
+            <div id="doodleGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 pb-12">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </section>
+
+        <!-- VIEW 2: INTERACTIVE STUDIO (Drawing & Coloring Canvas) -->
+        <section id="studioView" class="hidden flex-1 flex flex-col space-y-4">
+            <!-- Top Controls Toolbar -->
+            <div class="flex flex-wrap items-center justify-between bg-white rounded-2xl p-3 shadow-md border-2 border-amber-200 gap-2">
+                <div class="flex items-center space-x-3">
+                    <button onclick="goHome()" class="bouncy-btn bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-xl font-bold text-sm flex items-center space-x-1">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Back</span>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <span id="activeEmoji" class="text-2xl">🦁</span>
+                        <h2 id="activeTitle" class="text-xl md:text-2xl font-black text-indigo-950">Lion Doodle</h2>
+                    </div>
+                </div>
+
+                <!-- Studio Mode Switcher: Step Guide vs Coloring Mode -->
+                <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button id="modeDrawBtn" onclick="switchStudioMode('draw')" class="bouncy-btn px-4 py-1.5 rounded-lg font-bold text-sm flex items-center space-x-2 bg-indigo-600 text-white shadow-sm">
+                        <i class="fa-solid fa-pencil"></i>
+                        <span>Step Guide</span>
+                    </button>
+                    <button id="modeColorBtn" onclick="switchStudioMode('color')" class="bouncy-btn px-4 py-1.5 rounded-lg font-bold text-sm flex items-center space-x-2 text-slate-600 hover:text-indigo-600">
+                        <i class="fa-solid fa-paint-bucket"></i>
+                        <span>Coloring Mode</span>
+                    </button>
+                </div>
+
+                <!-- General Actions -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="undo()" title="Undo" class="bouncy-btn bg-amber-100 hover:bg-amber-200 text-amber-800 p-2.5 rounded-xl font-bold border border-amber-300">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button onclick="redo()" title="Redo" class="bouncy-btn bg-amber-100 hover:bg-amber-200 text-amber-800 p-2.5 rounded-xl font-bold border border-amber-300">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button onclick="clearCanvas()" title="Clear Canvas" class="bouncy-btn bg-rose-100 hover:bg-rose-200 text-rose-700 p-2.5 rounded-xl font-bold border border-rose-300">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    <button onclick="printDrawing()" title="Print Worksheet" class="bouncy-btn bg-sky-100 hover:bg-sky-200 text-sky-700 p-2.5 rounded-xl font-bold border border-sky-300">
+                        <i class="fa-solid fa-print"></i>
+                    </button>
+                    <button onclick="downloadImage()" class="bouncy-btn bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center space-x-1 shadow-md border-b-2 border-emerald-700">
+                        <i class="fa-solid fa-download"></i>
+                        <span class="hidden sm:inline">Save</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Interactive Canvas Area -->
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+                <!-- Left Sidebar / Tools Panel -->
+                <div class="lg:col-span-3 bg-white rounded-3xl p-4 shadow-md border-2 border-amber-200 flex flex-col space-y-4">
+
+                    <!-- STEP DRAWING STEPPER CONTROLS (Only visible in Draw Mode) -->
+                    <div id="stepGuideControls" class="flex flex-col space-y-3 bg-yellow-50 p-3 rounded-2xl border border-yellow-200">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-black uppercase text-amber-800 tracking-wider">Guide Steps</span>
+                            <span id="stepCounter" class="text-sm font-extrabold bg-yellow-400 text-yellow-950 px-2 py-0.5 rounded-full">Step 1 / 4</span>
+                        </div>
+                        <p id="stepInstruction" class="text-sm text-slate-700 font-bold bg-white p-2.5 rounded-xl border border-yellow-200 min-h-[50px] flex items-center">
+                            Draw the main head shape...
+                        </p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="prevStepBtn" onclick="changeStep(-1)" class="bouncy-btn bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-xl font-extrabold text-xs flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-chevron-left"></i>
+                                <span>Prev Step</span>
+                            </button>
+                            <button id="nextStepBtn" onclick="changeStep(1)" class="bouncy-btn bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl font-extrabold text-xs flex items-center justify-center space-x-1">
+                                <span>Next Step</span>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- DRAWING / COLORING TOOLS -->
+                    <div class="flex flex-col space-y-2">
+                        <label class="text-xs font-black uppercase text-slate-400 tracking-wider">Choose Tool</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="toolPencil" onclick="setTool('pencil')" class="tool-btn bg-indigo-50 border-2 border-indigo-500 text-indigo-900 p-2.5 rounded-xl font-bold text-xs flex items-center space-x-2">
+                                <i class="fa-solid fa-pencil text-base text-indigo-600"></i>
+                                <span>Pencil / Pen</span>
+                            </button>
+                            <button id="toolBucket" onclick="setTool('bucket')" class="tool-btn bg-slate-50 border-2 border-slate-200 text-slate-700 p-2.5 rounded-xl font-bold text-xs flex items-center space-x-2">
+                                <i class="fa-solid fa-fill-drip text-base text-pink-500"></i>
+                                <span>Paint Bucket</span>
+                            </button>
+                            <button id="toolMarker" onclick="setTool('marker')" class="tool-btn bg-slate-50 border-2 border-slate-200 text-slate-700 p-2.5 rounded-xl font-bold text-xs flex items-center space-x-2">
+                                <i class="fa-solid fa-highlighter text-base text-amber-500"></i>
+                                <span>Marker Brush</span>
+                            </button>
+                            <button id="toolRainbow" onclick="setTool('rainbow')" class="tool-btn bg-slate-50 border-2 border-slate-200 text-slate-700 p-2.5 rounded-xl font-bold text-xs flex items-center space-x-2">
+                                <i class="fa-solid fa-wand-magic-sparkles text-base text-purple-500"></i>
+                                <span>Magic Rainbow</span>
+                            </button>
+                            <button id="toolEraser" onclick="setTool('eraser')" class="tool-btn bg-slate-50 border-2 border-slate-200 text-slate-700 p-2.5 rounded-xl font-bold text-xs flex items-center space-x-2">
+                                <i class="fa-solid fa-eraser text-base text-rose-500"></i>
+                                <span>Eraser</span>
+                            </button>
+                            <button id="toolSticker" onclick="setTool('sticker')" class="tool-btn bg-slate-50 border-2 border-slate-200 text-slate-700 p-2.5 rounded-xl font-bold text-xs flex items-center space-x-2">
+                                <i class="fa-solid fa-star text-base text-yellow-500"></i>
+                                <span>Stickers</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- BRUSH SIZE SELECTOR -->
+                    <div id="sizeSelector" class="flex flex-col space-y-1">
+                        <div class="flex justify-between text-xs font-bold text-slate-500">
+                            <span>Brush Size</span>
+                            <span id="brushSizeVal">8px</span>
+                        </div>
+                        <input type="range" id="brushSizeRange" min="3" max="36" value="8" oninput="updateBrushSize(this.value)" class="w-full accent-indigo-600 cursor-pointer h-2 bg-slate-200 rounded-lg">
+                    </div>
+
+                    <!-- STICKER SELECTOR (Hidden unless Sticker tool active) -->
+                    <div id="stickerPicker" class="hidden flex-col space-y-2 bg-purple-50 p-2.5 rounded-2xl border border-purple-200">
+                        <label class="text-xs font-bold text-purple-800">Pick a Stamp Sticker:</label>
+                        <div class="flex justify-between items-center bg-white p-1 rounded-xl">
+                            <button onclick="setSticker('⭐')" class="text-xl p-1.5 hover:bg-purple-100 rounded-lg">⭐</button>
+                            <button onclick="setSticker('💖')" class="text-xl p-1.5 hover:bg-purple-100 rounded-lg">💖</button>
+                            <button onclick="setSticker('✨')" class="text-xl p-1.5 hover:bg-purple-100 rounded-lg">✨</button>
+                            <button onclick="setSticker('👑')" class="text-xl p-1.5 hover:bg-purple-100 rounded-lg">👑</button>
+                            <button onclick="setSticker('🌸')" class="text-xl p-1.5 hover:bg-purple-100 rounded-lg">🌸</button>
+                            <button onclick="setSticker('🎈')" class="text-xl p-1.5 hover:bg-purple-100 rounded-lg">🎈</button>
+                        </div>
+                    </div>
+
+                    <!-- COLOR PALETTE -->
+                    <div class="flex flex-col space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-black uppercase text-slate-400 tracking-wider">Color Palette</label>
+                            <input type="color" id="customColorPicker" value="#4F46E5" onchange="setColor(this.value)" class="w-6 h-6 rounded-full cursor-pointer border-0 p-0">
+                        </div>
+                        <div id="paletteGrid" class="grid grid-cols-6 gap-2">
+                            <!-- Populated with color dots via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Central Canvas Area -->
+                <div class="lg:col-span-9 flex flex-col items-center justify-center relative bg-white rounded-3xl p-3 md:p-6 shadow-xl border-4 border-amber-300 canvas-shadow min-h-[480px]">
+                    
+                    <!-- Guide Overlay Container for Step-by-Step SVG Overlay -->
+                    <div class="relative w-full max-w-[650px] aspect-square flex items-center justify-center bg-white rounded-2xl overflow-hidden border border-slate-100">
+                        
+                        <!-- Reference / Step Vector Overlay Canvas -->
+                        <canvas id="guideCanvas" width="600" height="600" class="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-75"></canvas>
+                        
+                        <!-- Drawing & Coloring Interactive Canvas -->
+                        <canvas id="paintCanvas" width="600" height="600" class="absolute inset-0 w-full h-full z-20 cursor-crosshair touch-none"></canvas>
+
+                    </div>
+
+                    <!-- Bottom Finish Action Banner -->
+                    <div class="mt-4 flex items-center justify-between w-full max-w-[650px]">
+                        <div class="text-xs text-slate-400 font-bold">
+                            Tip: Switch to <span class="text-indigo-600">Coloring Mode</span> to flood fill with colors!
+                        </div>
+                        <button onclick="triggerFinishCelebration()" class="bouncy-btn bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-indigo-950 font-black px-6 py-2.5 rounded-2xl shadow-lg border-b-4 border-amber-600 flex items-center space-x-2">
+                            <i class="fa-solid fa-trophy text-xl text-yellow-900"></i>
+                            <span>I'm Done! Finish!</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Audio Synthesizer using Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = true;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'pop') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'brush') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(220, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'cheer') {
+                    // Play a quick melody chime
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.setValueAtTime(freq, now + i * 0.1);
+                        noteGain.gain.setValueAtTime(0.2, now + i * 0.1);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.3);
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.start(now + i * 0.1);
+                        noteOsc.stop(now + i * 0.1 + 0.3);
+                    });
+                }
+            } catch (e) {
+                console.log('Audio error:', e);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggleBtn');
+            const icon = document.getElementById('soundIcon');
+            if (soundEnabled) {
+                btn.className = "bouncy-btn bg-pink-500 hover:bg-pink-600 text-white font-bold p-3 rounded-2xl shadow-md border-b-4 border-pink-700 flex items-center justify-center";
+                icon.className = "fa-solid fa-volume-high text-xl";
+                playSound('pop');
+            } else {
+                btn.className = "bouncy-btn bg-slate-400 hover:bg-slate-500 text-white font-bold p-3 rounded-2xl shadow-md border-b-4 border-slate-600 flex items-center justify-center";
+                icon.className = "fa-solid fa-volume-xmark text-xl";
+            }
+        }
+
+        // Comprehensive Database of 50+ Doodles (25 Animals, 25 Fruits/Veggies)
+        // Each entry contains vector paths organized by steps for step-by-step drawing guides.
+        const DOODLE_DATABASE = [
+            // --- ANIMALS (25) ---
+            {
+                id: 'lion', category: 'animals', name: 'Lion', emoji: '🦁',
+                steps: [
+                    { desc: "Draw a big circle in the middle for Lion's face.", path: (ctx) => { ctx.arc(300, 300, 80, 0, Math.PI * 2); } },
+                    { desc: "Add a fluffy cloud-like mane all around the head circle.", path: (ctx) => { 
+                        for(let i = 0; i < 12; i++) {
+                            let angle = (i * Math.PI / 6);
+                            let x = 300 + Math.cos(angle) * 110;
+                            let y = 300 + Math.sin(angle) * 110;
+                            ctx.moveTo(x + 35, y);
+                            ctx.arc(x, y, 35, 0, Math.PI * 2);
+                        }
+                    }},
+                    { desc: "Draw two cute eyes, a triangular nose, and a curved smile.", path: (ctx) => {
+                        ctx.arc(270, 280, 10, 0, Math.PI * 2);
+                        ctx.moveTo(340, 280); ctx.arc(330, 280, 10, 0, Math.PI * 2);
+                        ctx.moveTo(300, 310); ctx.lineTo(285, 300); ctx.lineTo(315, 300); ctx.closePath();
+                        ctx.moveTo(300, 310); ctx.quadraticCurveTo(290, 330, 280, 320);
+                        ctx.moveTo(300, 310); ctx.quadraticCurveTo(310, 330, 320, 320);
+                    }},
+                    { desc: "Draw an oval body below with paws!", path: (ctx) => {
+                        ctx.ellipse(300, 440, 60, 80, 0, 0, Math.PI * 2);
+                        ctx.rect(260, 490, 30, 30); ctx.rect(310, 490, 30, 30);
+                    }}
+                ]
+            },
+            {
+                id: 'panda', category: 'animals', name: 'Panda', emoji: '🐼',
+                steps: [
+                    { desc: "Draw a large rounded head circle.", path: (ctx) => { ctx.arc(300, 280, 100, 0, Math.PI * 2); } },
+                    { desc: "Add two round ears on top and dark eye patches.", path: (ctx) => {
+                        ctx.arc(220, 200, 30, 0, Math.PI * 2);
+                        ctx.moveTo(410, 200); ctx.arc(380, 200, 30, 0, Math.PI * 2);
+                        ctx.moveTo(275, 270); ctx.ellipse(260, 270, 25, 20, -0.2, 0, Math.PI * 2);
+                        ctx.moveTo(355, 270); ctx.ellipse(340, 270, 25, 20, 0.2, 0, Math.PI * 2);
+                    }},
+                    { desc: "Draw eyes inside the patches, a nose, and mouth.", path: (ctx) => {
+                        ctx.arc(260, 270, 8, 0, Math.PI * 2);
+                        ctx.moveTo(348, 270); ctx.arc(340, 270, 8, 0, Math.PI * 2);
+                        ctx.moveTo(300, 300); ctx.ellipse(300, 300, 15, 10, 0, 0, Math.PI * 2);
+                        ctx.moveTo(300, 310); ctx.lineTo(300, 325);
+                    }},
+                    { desc: "Draw the round chubby body and cute paws.", path: (ctx) => {
+                        ctx.ellipse(300, 430, 90, 70, 0, 0, Math.PI * 2);
+                        ctx.ellipse(220, 410, 30, 40, 0.3, 0, Math.PI * 2);
+                        ctx.ellipse(380, 410, 30, 40, -0.3, 0, Math.PI * 2);
+                    }}
+                ]
+            },
+            {
+                id: 'elephant', category: 'animals', name: 'Elephant', emoji: '🐘',
+                steps: [
+                    { desc: "Draw a big round body and head circle.", path: (ctx) => { ctx.arc(280, 280, 90, 0, Math.PI * 2); } },
+                    { desc: "Draw a long curving trunk in front.", path: (ctx) => {
+                        ctx.moveTo(210, 290);
+                        ctx.quadraticCurveTo(150, 320, 160, 380);
+                        ctx.quadraticCurveTo(170, 410, 200, 390);
+                        ctx.quadraticCurveTo(180, 350, 230, 320);
+                    }},
+                    { desc: "Add giant floppy ear flap on the side.", path: (ctx) => {
+                        ctx.ellipse(370, 280, 60, 80, 0.2, 0, Math.PI * 2);
+                    }},
+                    { desc: "Draw 4 sturdy tree-trunk legs and a cute tail.", path: (ctx) => {
+                        ctx.rect(230, 350, 35, 100); ctx.rect(290, 350, 35, 100);
+                        ctx.rect(340, 340, 35, 90);
+                        ctx.moveTo(410, 310); ctx.quadraticCurveTo(440, 330, 435, 370);
+                    }}
+                ]
+            },
+            {
+                id: 'cat', category: 'animals', name: 'Cat', emoji: '🐱',
+                steps: [
+                    { desc: "Draw an oval head shape.", path: (ctx) => { ctx.ellipse(300, 260, 90, 70, 0, 0, Math.PI * 2); } },
+                    { desc: "Add two pointy triangle ears on top.", path: (ctx) => {
+                        ctx.moveTo(230, 210); ctx.lineTo(210, 140); ctx.lineTo(270, 190);
+                        ctx.moveTo(370, 210); ctx.lineTo(390, 140); ctx.lineTo(330, 190);
+                    }},
+                    { desc: "Draw eyes, nose, and whiskers on the cheeks!", path: (ctx) => {
+                        ctx.arc(260, 250, 10, 0, Math.PI * 2);
+                        ctx.moveTo(350, 250); ctx.arc(340, 250, 10, 0, Math.PI * 2);
+                        ctx.moveTo(300, 270); ctx.lineTo(290, 260); ctx.lineTo(310, 260); ctx.closePath();
+                        // Whiskers
+                        ctx.moveTo(230, 265); ctx.lineTo(160, 250);
+                        ctx.moveTo(230, 275); ctx.lineTo(160, 280);
+                        ctx.moveTo(370, 265); ctx.lineTo(440, 250);
+                        ctx.moveTo(370, 275); ctx.lineTo(440, 280);
+                    }},
+                    { desc: "Draw the sitting body and a curly long tail.", path: (ctx) => {
+                        ctx.ellipse(300, 400, 60, 80, 0, 0, Math.PI * 2);
+                        ctx.moveTo(360, 420); ctx.quadraticCurveTo(440, 400, 420, 330);
+                    }}
+                ]
+            },
+            {
+                id: 'dog', category: 'animals', name: 'Dog', emoji: '🐶',
+                steps: [
+                    { desc: "Draw a rounded head and floppy floppy ears.", path: (ctx) => {
+                        ctx.arc(300, 260, 80, 0, Math.PI * 2);
+                        ctx.ellipse(210, 270, 25, 50, 0.3, 0, Math.PI * 2);
+                        ctx.ellipse(390, 270, 25, 50, -0.3, 0, Math.PI * 2);
+                    }},
+                    { desc: "Draw a big puppy snout circle and shiny nose.", path: (ctx) => {
+                        ctx.ellipse(300, 285, 40, 30, 0, 0, Math.PI * 2);
+                        ctx.ellipse(300, 275, 18, 12, 0, 0, Math.PI * 2);
+                    }},
+                    { desc: "Add bright eyes and a happy tongue sticking out!", path: (ctx) => {
+                        ctx.arc(270, 240, 9, 0, Math.PI * 2);
+                        ctx.moveTo(339, 240); ctx.arc(330, 240, 9, 0, Math.PI * 2);
+                        ctx.moveTo(300, 300); ctx.ellipse(300, 310, 12, 18, 0, 0, Math.PI * 2);
+                    }},
+                    { desc: "Draw the dog body with a wagging tail!", path: (ctx) => {
+                        ctx.ellipse(300, 420, 65, 75, 0, 0, Math.PI * 2);
+                        ctx.moveTo(360, 410); ctx.quadraticCurveTo(420, 380, 430, 350);
+                    }}
+                ]
+            },
+            {
+                id: 'penguin', category: 'animals', name: 'Penguin', emoji: '🐧',
+                steps: [
+                    { desc: "Draw a large egg shape for Penguin's body.", path: (ctx) => { ctx.ellipse(300, 320, 100, 140, 0, 0, Math.PI * 2); } },
+                    { desc: "Draw an inner belly white patch curve.", path: (ctx) => { ctx.ellipse(300, 340, 70, 110, 0, 0, Math.PI * 2); } },
+                    { desc: "Add cute eyes and a pointy beak.", path: (ctx) => {
+                        ctx.arc(265, 250, 10, 0, Math.PI * 2);
+                        ctx.moveTo(345, 250); ctx.arc(335, 250, 10, 0, Math.PI * 2);
+                        ctx.moveTo(300, 260); ctx.lineTo(280, 280); ctx.lineTo(320, 280); ctx.closePath();
+                    }},
+                    { desc: "Add side flipper wings and webbed feet!", path: (ctx) => {
+                        ctx.ellipse(180, 330, 25, 60, 0.4, 0, Math.PI * 2);
+                        ctx.ellipse(420, 330, 25, 60, -0.4, 0, Math.PI * 2);
+                        ctx.ellipse(260, 460, 30, 15, 0, 0, Math.PI * 2);
+                        ctx.ellipse(340, 460, 30, 15, 0, 0, Math.PI * 2);
+                    }}
+                ]
+            },
+            {
+                id: 'giraffe', category: 'animals', name: 'Giraffe', emoji: '🦒',
+                steps: [
+                    { desc: "Draw a head oval and two long neck lines down.", path: (ctx) => {
+                        ctx.ellipse(260, 180, 45, 35, -0.2, 0, Math.PI * 2);
+                        ctx.moveTo(250, 210); ctx.lineTo(270, 420);
+                        ctx.moveTo(290, 200); ctx.lineTo(330, 420);
+                    }},
+                    { desc: "Add tiny horns (ossicones) and ears on top.", path: (ctx) => {
+                        ctx.moveTo(240, 150); ctx.lineTo(235, 110); ctx.arc(235, 105, 8, 0, Math.PI*2);
+                        ctx.moveTo(265, 150); ctx.lineTo(265, 110); ctx.arc(265, 105, 8, 0, Math.PI*2);
+                        ctx.ellipse(200, 170, 25, 12, -0.4, 0, Math.PI * 2);
+                    }},
+                    { desc: "Draw a cute muzzle, eyes, and giraffe spots on neck!", path: (ctx) => {
+                        ctx.arc(230, 180, 6, 0, Math.PI*2);
+                        ctx.rect(265, 240, 25, 25); ctx.rect(280, 300, 30, 25); ctx.rect(290, 360, 25, 25);
+                    }},
+                    { desc: "Draw the body oval and long legs.", path: (ctx) => {
+                        ctx.ellipse(350, 440, 70, 50, 0, 0, Math.PI * 2);
+                        ctx.rect(310, 480, 15, 80); ctx.rect(360, 480, 15, 80);
+                    }}
+                ]
+            },
+            {
+                id: 'monkey', category: 'animals', name: 'Monkey', emoji: '🐒',
+                steps: [
+                    { desc: "Draw a circle for the head and two ear circles.", path: (ctx) => {
+                        ctx.arc(300, 250, 75, 0, Math.PI * 2);
+                        ctx.arc(215, 250, 25, 0, Math.PI * 2);
+                        ctx.arc(385, 250, 25, 0, Math.PI * 2);
+                    }},
+                    { desc: "Draw a heart-shaped inner mask for the face.", path: (ctx) => {
+                        ctx.moveTo(300, 290);
+                        ctx.quadraticCurveTo(230, 270, 240, 210);
+                        ctx.quadraticCurveTo(270, 190, 300, 220);
+                        ctx.quadraticCurveTo(330, 190, 360, 210);
+                        ctx.quadraticCurveTo(370, 270, 300, 290);
+                    }},
+                    { desc: "Add shiny eyes, a cute nose, and big smile.", path: (ctx) => {
+                        ctx.arc(275, 230, 8, 0, Math.PI * 2);
+                        ctx.moveTo(333, 230); ctx.arc(325, 230, 8, 0, Math.PI * 2);
+                        ctx.moveTo(300, 260); ctx.arc(300, 260, 6, 0, Math.PI * 2);
+                        ctx.moveTo(280, 275); ctx.quadraticCurveTo(300, 295, 320, 275);
+                    }},
+                    { desc: "Draw body, arms, and a long curly swirl tail!", path: (ctx) => {
+                        ctx.ellipse(300, 390, 55, 65, 0, 0, Math.PI * 2);
+                        ctx.moveTo(350, 400); ctx.quadraticCurveTo(450, 380, 430, 300);
+                    }}
+                ]
+            },
+            {
+                id: 'bunny', category: 'animals', name: 'Bunny', emoji: '🐰',
+                steps: [
+                    { desc: "Draw a soft round head.", path: (ctx) => { ctx.arc(300, 280, 75, 0, Math.PI * 2); } },
+                    { desc: "Draw TWO super long rabbit ears on top!", path: (ctx) => {
+                        ctx.ellipse(260, 140, 25, 80, -0.1, 0, Math.PI * 2);
+                        ctx.ellipse(340, 140, 25, 80, 0.1, 0, Math.PI * 2);
+                    }},
+                    { desc: "Draw twitchy nose, eyes, and cute front teeth.", path: (ctx) => {
+                        ctx.arc(270, 270, 8, 0, Math.PI * 2);
+                        ctx.moveTo(338, 270); ctx.arc(330, 270, 8, 0, Math.PI * 2);
+                        ctx.moveTo(300, 290); ctx.lineTo(290, 282); ctx.lineTo(310, 282); ctx.closePath();
+                        ctx.rect(294, 295, 12, 12);
+                    }},
+                    { desc: "Draw fluffy fluffy body and a puff tail!", path: (ctx) => {
+                        ctx.ellipse(300, 410, 65, 70, 0, 0, Math.PI * 2);
+                        ctx.arc(370, 420, 20, 0, Math.PI * 2);
+                    }}
+                ]
+            },
+            {
+                id: 'owl', category: 'animals', name: 'Owl', emoji: '🦉',
+                steps: [
+                    { desc: "Draw a big egg shape for the owl body.", path: (ctx) => { ctx.ellipse(300, 300, 95, 120, 0, 0, Math.PI * 2); } },
+                    { desc: "Draw TWO GIANT eye circles!", path: (ctx) => {
+                        ctx.arc(250, 250, 40, 0, Math.PI * 2);
+                        ctx.moveTo(390, 250); ctx.arc(350, 250, 40, 0, Math.PI * 2);
+                    }},
+                    { desc: "Add pupils inside and a sharp beak between them.", path: (ctx) => {
+                        ctx.arc(250, 250, 15, 0, Math.PI * 2);
+                        ctx.moveTo(365, 250); ctx.arc(350, 250, 15, 0, Math.PI * 2);
+                        ctx.moveTo(300, 270); ctx.lineTo(285, 295); ctx.lineTo(315, 295); ctx.closePath();
+                    }},
+                    { desc: "Draw feather belly scallops and branch perched under feet.", path: (ctx) => {
+                        ctx.arc(280, 350, 12, 0, Math.PI);
+                        ctx.moveTo(330, 350); ctx.arc(310, 350, 12, 0, Math.PI);
+                        ctx.moveTo(180, 420); ctx.lineTo(420, 420); ctx.lineWidth = 10;
+                    }}
+                ]
+            },
+            { id: 'dolphin', category: 'animals', name: 'Dolphin', emoji: '🐬', steps: [
+                { desc: "Draw a smooth curved arching body.", path: (ctx) => { ctx.moveTo(150, 320); ctx.quadraticCurveTo(300, 160, 450, 300); ctx.quadraticCurveTo(300, 380, 150, 320); } },
+                { desc: "Add a cute snout beak and eye.", path: (ctx) => { ctx.moveTo(440, 290); ctx.quadraticCurveTo(480, 300, 450, 320); ctx.arc(390, 260, 6, 0, Math.PI*2); } },
+                { desc: "Draw dorsal fin on back and side flippers.", path: (ctx) => { ctx.moveTo(280, 205); ctx.quadraticCurveTo(300, 130, 340, 200); ctx.moveTo(320, 310); ctx.quadraticCurveTo(300, 370, 350, 340); } },
+                { desc: "Draw a flapped tail fin at the end!", path: (ctx) => { ctx.moveTo(150, 320); ctx.lineTo(110, 280); ctx.lineTo(130, 325); ctx.lineTo(100, 360); ctx.closePath(); } }
+            ]},
+            { id: 'bear', category: 'animals', name: 'Bear', emoji: '🐻', steps: [
+                { desc: "Draw a large circle for Bear's head.", path: (ctx) => { ctx.arc(300, 260, 90, 0, Math.PI*2); } },
+                { desc: "Add two round ears on top and a big snout circle.", path: (ctx) => { ctx.arc(220, 190, 30, 0, Math.PI*2); ctx.moveTo(410, 190); ctx.arc(380, 190, 30, 0, Math.PI*2); ctx.ellipse(300, 280, 40, 30, 0, 0, Math.PI*2); } },
+                { desc: "Draw eyes, nose, and smiling mouth.", path: (ctx) => { ctx.arc(265, 235, 8, 0, Math.PI*2); ctx.moveTo(343, 235); ctx.arc(335, 235, 8, 0, Math.PI*2); ctx.ellipse(300, 270, 15, 10, 0, 0, Math.PI*2); } },
+                { desc: "Draw a big cuddly bear body!", path: (ctx) => { ctx.ellipse(300, 420, 85, 90, 0, 0, Math.PI*2); } }
+            ]},
+            { id: 'tiger', category: 'animals', name: 'Tiger', emoji: '🐯', steps: [
+                { desc: "Draw head circle and ear curves.", path: (ctx) => { ctx.arc(300, 260, 85, 0, Math.PI*2); ctx.arc(225, 200, 25, 0, Math.PI*2); ctx.arc(375, 200, 25, 0, Math.PI*2); } },
+                { desc: "Draw tiger face stripes on cheeks and forehead!", path: (ctx) => { ctx.moveTo(300, 180); ctx.lineTo(300, 210); ctx.moveTo(230, 260); ctx.lineTo(250, 260); ctx.moveTo(370, 260); ctx.lineTo(350, 260); } },
+                { desc: "Draw eyes, nose, and mouth muzzle.", path: (ctx) => { ctx.arc(260, 240, 9, 0, Math.PI*2); ctx.moveTo(349, 240); ctx.arc(340, 240, 9, 0, Math.PI*2); ctx.ellipse(300, 280, 35, 25, 0, 0, Math.PI*2); } },
+                { desc: "Draw striped body and long tail!", path: (ctx) => { ctx.ellipse(300, 420, 70, 80, 0, 0, Math.PI*2); ctx.moveTo(360, 430); ctx.quadraticCurveTo(450, 410, 430, 320); } }
+            ]},
+            { id: 'pig', category: 'animals', name: 'Pig', emoji: '🐷', steps: [
+                { desc: "Draw a large round pig head circle.", path: (ctx) => { ctx.arc(300, 270, 95, 0, Math.PI*2); } },
+                { desc: "Draw a big oval snout with two nostril dots!", path: (ctx) => { ctx.ellipse(300, 280, 45, 32, 0, 0, Math.PI*2); ctx.arc(285, 280, 7, 0, Math.PI*2); ctx.moveTo(322, 280); ctx.arc(315, 280, 7, 0, Math.PI*2); } },
+                { desc: "Draw eyes and triangular floppy ears.", path: (ctx) => { ctx.arc(250, 220, 9, 0, Math.PI*2); ctx.moveTo(359, 220); ctx.arc(350, 220, 9, 0, Math.PI*2); ctx.moveTo(220, 200); ctx.lineTo(180, 160); ctx.lineTo(235, 175); ctx.moveTo(380, 200); ctx.lineTo(420, 160); ctx.lineTo(365, 175); } },
+                { desc: "Draw pig body and curly pig tail!", path: (ctx) => { ctx.ellipse(300, 430, 75, 60, 0, 0, Math.PI*2); ctx.moveTo(375, 430); ctx.arc(390, 430, 15, 0, Math.PI*3); } }
+            ]},
+            { id: 'cow', category: 'animals', name: 'Cow', emoji: '🐮', steps: [
+                { desc: "Draw head shape and snout oval.", path: (ctx) => { ctx.ellipse(300, 240, 70, 60, 0, 0, Math.PI*2); ctx.ellipse(300, 275, 50, 30, 0, 0, Math.PI*2); } },
+                { desc: "Add two horns and floppy ears.", path: (ctx) => { ctx.moveTo(250, 190); ctx.quadraticCurveTo(230, 140, 220, 150); ctx.moveTo(350, 190); ctx.quadraticCurveTo(370, 140, 380, 150); ctx.ellipse(210, 220, 30, 15, -0.3, 0, Math.PI*2); ctx.ellipse(390, 220, 30, 15, 0.3, 0, Math.PI*2); } },
+                { desc: "Draw eyes and cow spots!", path: (ctx) => { ctx.arc(260, 220, 8, 0, Math.PI*2); ctx.moveTo(348, 220); ctx.arc(340, 220, 8, 0, Math.PI*2); ctx.arc(320, 195, 18, 0, Math.PI*2); } },
+                { desc: "Draw body with more cow spots!", path: (ctx) => { ctx.ellipse(300, 410, 80, 70, 0, 0, Math.PI*2); ctx.ellipse(270, 420, 25, 20, 0, 0, Math.PI*2); } }
+            ]},
+            { id: 'zebra', category: 'animals', name: 'Zebra', emoji: '🦓', steps: [
+                { desc: "Draw head and snout like a horse.", path: (ctx) => { ctx.ellipse(270, 220, 60, 40, -0.3, 0, Math.PI*2); ctx.ellipse(230, 240, 30, 25, 0, 0, Math.PI*2); } },
+                { desc: "Draw mane on neck and pointy ears.", path: (ctx) => { ctx.moveTo(310, 190); ctx.lineTo(360, 320); ctx.ellipse(310, 170, 12, 30, 0.2, 0, Math.PI*2); } },
+                { desc: "Draw zebra stripes along neck and head!", path: (ctx) => { ctx.moveTo(280, 220); ctx.lineTo(320, 240); ctx.moveTo(290, 250); ctx.lineTo(330, 270); ctx.moveTo(300, 280); ctx.lineTo(340, 300); } },
+                { desc: "Draw horse body and hooves.", path: (ctx) => { ctx.ellipse(360, 360, 75, 55, 0, 0, Math.PI*2); ctx.rect(330, 415, 15, 70); ctx.rect(380, 415, 15, 70); } }
+            ]},
+            { id: 'frog', category: 'animals', name: 'Frog', emoji: '🐸', steps: [
+                { desc: "Draw wide oval head and two big eye bumps!", path: (ctx) => { ctx.ellipse(300, 280, 90, 60, 0, 0, Math.PI*2); ctx.arc(240, 225, 28, 0, Math.PI*2); ctx.moveTo(388, 225); ctx.arc(360, 225, 28, 0, Math.PI*2); } },
+                { desc: "Draw eyes inside bumps and HUGE smile!", path: (ctx) => { ctx.arc(240, 225, 10, 0, Math.PI*2); ctx.moveTo(370, 225); ctx.arc(360, 225, 10, 0, Math.PI*2); ctx.moveTo(230, 280); ctx.quadraticCurveTo(300, 330, 370, 280); } },
+                { desc: "Draw chubby frog belly.", path: (ctx) => { ctx.ellipse(300, 380, 70, 50, 0, 0, Math.PI*2); } },
+                { desc: "Draw folded bent frog legs!", path: (ctx) => { ctx.moveTo(230, 370); ctx.quadraticCurveTo(180, 390, 200, 430); ctx.lineTo(240, 430); ctx.moveTo(370, 370); ctx.quadraticCurveTo(420, 390, 400, 430); ctx.lineTo(360, 430); } }
+            ]},
+            { id: 'koala', category: 'animals', name: 'Koala', emoji: '🐨', steps: [
+                { desc: "Draw a big head circle and huge fuzzy ear circles.", path: (ctx) => { ctx.arc(300, 260, 80, 0, Math.PI*2); ctx.arc(205, 220, 40, 0, Math.PI*2); ctx.arc(395, 220, 40, 0, Math.PI*2); } },
+                { desc: "Draw a large dark oval nose in middle of face.", path: (ctx) => { ctx.ellipse(300, 275, 25, 38, 0, 0, Math.PI*2); } },
+                { desc: "Draw eyes on sides of nose.", path: (ctx) => { ctx.arc(250, 245, 8, 0, Math.PI*2); ctx.moveTo(358, 245); ctx.arc(350, 245, 8, 0, Math.PI*2); } },
+                { desc: "Draw koala body hugging a tree trunk branch!", path: (ctx) => { ctx.ellipse(300, 410, 65, 70, 0, 0, Math.PI*2); ctx.rect(370, 150, 35, 330); } }
+            ]},
+            { id: 'fox', category: 'animals', name: 'Fox', emoji: '🦊', steps: [
+                { desc: "Draw a triangular face shape.", path: (ctx) => { ctx.moveTo(300, 320); ctx.lineTo(210, 220); ctx.lineTo(390, 220); ctx.closePath(); } },
+                { desc: "Add big pointy triangular fox ears!", path: (ctx) => { ctx.moveTo(230, 220); ctx.lineTo(210, 130); ctx.lineTo(270, 220); ctx.moveTo(370, 220); ctx.lineTo(390, 130); ctx.lineTo(330, 220); } },
+                { desc: "Draw black nose at bottom point and eyes.", path: (ctx) => { ctx.arc(300, 310, 10, 0, Math.PI*2); ctx.moveTo(250, 245); ctx.arc(250, 245, 7, 0, Math.PI*2); ctx.moveTo(350, 245); ctx.arc(350, 245, 7, 0, Math.PI*2); } },
+                { desc: "Draw body and big bushy tail with white tip!", path: (ctx) => { ctx.ellipse(300, 420, 60, 70, 0, 0, Math.PI*2); ctx.moveTo(350, 420); ctx.quadraticCurveTo(450, 400, 420, 290); } }
+            ]},
+            { id: 'sheep', category: 'animals', name: 'Sheep', emoji: '🐑', steps: [
+                { desc: "Draw a fluffy cloud circle body!", path: (ctx) => { ctx.arc(300, 320, 95, 0, Math.PI*2); } },
+                { desc: "Draw smooth oval face in front.", path: (ctx) => { ctx.ellipse(280, 280, 45, 55, 0.2, 0, Math.PI*2); } },
+                { desc: "Add cute floppy ears and face features.", path: (ctx) => { ctx.ellipse(220, 260, 25, 12, -0.3, 0, Math.PI*2); ctx.arc(265, 270, 6, 0, Math.PI*2); } },
+                { desc: "Draw 4 thin stick legs at bottom.", path: (ctx) => { ctx.rect(250, 415, 12, 60); ctx.rect(280, 415, 12, 60); ctx.rect(320, 415, 12, 60); ctx.rect(350, 415, 12, 60); } }
+            ]},
+            { id: 'duck', category: 'animals', name: 'Duck', emoji: '🦆', steps: [
+                { desc: "Draw round head circle and body oval.", path: (ctx) => { ctx.arc(250, 220, 50, 0, Math.PI*2); ctx.ellipse(320, 340, 80, 55, 0.2, 0, Math.PI*2); } },
+                { desc: "Draw a flat duck beak bill!", path: (ctx) => { ctx.ellipse(185, 230, 30, 15, 0, 0, Math.PI*2); } },
+                { desc: "Add eye and neck connection.", path: (ctx) => { ctx.arc(240, 205, 7, 0, Math.PI*2); ctx.moveTo(220, 260); ctx.lineTo(260, 300); } },
+                { desc: "Draw wing curve and water waves beneath!", path: (ctx) => { ctx.ellipse(330, 330, 45, 25, -0.2, 0, Math.PI*2); ctx.moveTo(180, 410); ctx.quadraticCurveTo(250, 430, 320, 410); ctx.quadraticCurveTo(390, 430, 450, 410); } }
+            ]},
+            { id: 'turtle', category: 'animals', name: 'Turtle', emoji: '🐢', steps: [
+                { desc: "Draw a big dome shell arch.", path: (ctx) => { ctx.arc(300, 300, 100, Math.PI, 0); ctx.closePath(); } },
+                { desc: "Draw shell pattern hexagons inside!", path: (ctx) => { ctx.rect(250, 240, 40, 40); ctx.rect(310, 240, 40, 40); } },
+                { desc: "Draw turtle head poking out front.", path: (ctx) => { ctx.ellipse(420, 290, 35, 25, -0.2, 0, Math.PI*2); ctx.arc(430, 285, 5, 0, Math.PI*2); } },
+                { desc: "Draw 4 stumpy flipper feet and little tail.", path: (ctx) => { ctx.ellipse(230, 320, 25, 15, 0.4, 0, Math.PI*2); ctx.ellipse(370, 320, 25, 15, -0.4, 0, Math.PI*2); ctx.moveTo(195, 300); ctx.lineTo(170, 305); ctx.lineTo(195, 310); } }
+            ]},
+            { id: 'hippo', category: 'animals', name: 'Hippo', emoji: '🦛', steps: [
+                { desc: "Draw giant oval muzzle snout.", path: (ctx) => { ctx.ellipse(280, 300, 90, 65, 0, 0, Math.PI*2); } },
+                { desc: "Draw smaller head curve above snout.", path: (ctx) => { ctx.arc(280, 220, 55, Math.PI, 0); } },
+                { desc: "Add tiny ears, eyes, and big nostril dots!", path: (ctx) => { ctx.arc(220, 165, 15, 0, Math.PI*2); ctx.arc(340, 165, 15, 0, Math.PI*2); ctx.arc(250, 200, 7, 0, Math.PI*2); ctx.arc(310, 200, 7, 0, Math.PI*2); ctx.arc(240, 290, 10, 0, Math.PI*2); ctx.arc(320, 290, 10, 0, Math.PI*2); } },
+                { desc: "Draw big round body behind hippo!", path: (ctx) => { ctx.ellipse(380, 340, 85, 75, 0, 0, Math.PI*2); } }
+            ]},
+            { id: 'whale', category: 'animals', name: 'Whale', emoji: '🐳', steps: [
+                { desc: "Draw a huge oval whale body curve.", path: (ctx) => { ctx.ellipse(280, 300, 130, 90, 0, 0, Math.PI*2); } },
+                { desc: "Draw tail tapering out back with fins.", path: (ctx) => { ctx.moveTo(400, 300); ctx.lineTo(490, 250); ctx.lineTo(470, 300); ctx.lineTo(500, 340); ctx.closePath(); } },
+                { desc: "Add happy eye, smile, and belly lines.", path: (ctx) => { ctx.arc(200, 280, 8, 0, Math.PI*2); ctx.moveTo(180, 320); ctx.quadraticCurveTo(230, 350, 270, 320); } },
+                { desc: "Draw water fountain spouting from head top!!", path: (ctx) => { ctx.moveTo(280, 210); ctx.quadraticCurveTo(250, 130, 220, 140); ctx.moveTo(280, 210); ctx.quadraticCurveTo(310, 130, 340, 140); } }
+            ]},
+            { id: 'unicorn', category: 'animals', name: 'Unicorn', emoji: '🦄', steps: [
+                { desc: "Draw head and snout like a pony.", path: (ctx) => { ctx.ellipse(260, 240, 55, 40, -0.3, 0, Math.PI*2); } },
+                { desc: "Draw MAGICAL TWISTED HORN on forehead!! ✨", path: (ctx) => { ctx.moveTo(280, 200); ctx.lineTo(340, 100); ctx.lineTo(310, 210); ctx.closePath(); } },
+                { desc: "Draw ears and flowing magical mane hair!", path: (ctx) => { ctx.ellipse(230, 180, 12, 28, -0.4, 0, Math.PI*2); ctx.moveTo(260, 180); ctx.quadraticCurveTo(200, 220, 180, 320); } },
+                { desc: "Draw eyes with long pretty eyelashes!", path: (ctx) => { ctx.arc(260, 230, 7, 0, Math.PI*2); ctx.moveTo(255, 220); ctx.lineTo(250, 210); ctx.moveTo(265, 220); ctx.lineTo(265, 208); } }
+            ]},
+
+            // --- FRUITS & VEGGIES (25) ---
+            {
+                id: 'apple', category: 'fruits', name: 'Apple', emoji: '🍎',
+                steps: [
+                    { desc: "Draw a heart-shaped apple outline.", path: (ctx) => {
+                        ctx.moveTo(300, 200);
+                        ctx.bezierCurveTo(250, 150, 160, 200, 180, 320);
+                        ctx.bezierCurveTo(190, 420, 280, 440, 300, 410);
+                        ctx.bezierCurveTo(320, 440, 410, 420, 420, 320);
+                        ctx.bezierCurveTo(440, 200, 350, 150, 300, 200);
+                    }},
+                    { desc: "Draw a small stem sticking out top.", path: (ctx) => {
+                        ctx.moveTo(300, 200); ctx.quadraticCurveTo(310, 150, 325, 130);
+                        ctx.lineWidth = 6;
+                    }},
+                    { desc: "Add a leaf attached to the stem!", path: (ctx) => {
+                        ctx.moveTo(315, 160); ctx.quadraticCurveTo(370, 140, 360, 180);
+                        ctx.quadraticCurveTo(315, 180, 315, 160);
+                    }},
+                    { desc: "Add shiny light reflection spot!", path: (ctx) => {
+                        ctx.ellipse(230, 260, 12, 35, 0.4, 0, Math.PI * 2);
+                    }}
+                ]
+            },
+            {
+                id: 'banana', category: 'fruits', name: 'Banana', emoji: '🍌',
+                steps: [
+                    { desc: "Draw a smooth long crescent crescent curve.", path: (ctx) => {
+                        ctx.moveTo(200, 180);
+                        ctx.quadraticCurveTo(160, 380, 380, 400);
+                        ctx.quadraticCurveTo(220, 340, 200, 180);
+                    }},
+                    { desc: "Add top stem cap and bottom tip end.", path: (ctx) => {
+                        ctx.rect(190, 160, 20, 25);
+                        ctx.arc(385, 395, 8, 0, Math.PI * 2);
+                    }},
+                    { desc: "Draw banana peel ridge line down center.", path: (ctx) => {
+                        ctx.moveTo(200, 185); ctx.quadraticCurveTo(200, 360, 380, 395);
+                    }},
+                    { desc: "Draw cute kawaii face on the banana!", path: (ctx) => {
+                        ctx.arc(240, 280, 6, 0, Math.PI * 2);
+                        ctx.moveTo(280, 300); ctx.arc(270, 300, 6, 0, Math.PI * 2);
+                        ctx.moveTo(250, 300); ctx.quadraticCurveTo(255, 315, 260, 300);
+                    }}
+                ]
+            },
+            {
+                id: 'strawberry', category: 'fruits', name: 'Strawberry', emoji: '🍓',
+                steps: [
+                    { desc: "Draw a plump triangular strawberry shape.", path: (ctx) => {
+                        ctx.moveTo(300, 420);
+                        ctx.quadraticCurveTo(160, 320, 200, 200);
+                        ctx.quadraticCurveTo(300, 180, 400, 200);
+                        ctx.quadraticCurveTo(440, 320, 300, 420);
+                    }},
+                    { desc: "Draw leafy green crown leaves on top!", path: (ctx) => {
+                        for(let i=0; i<5; i++) {
+                            let x = 220 + i * 40;
+                            ctx.moveTo(300, 190); ctx.quadraticCurveTo(x, 140, x + 10, 190);
+                        }
+                    }},
+                    { desc: "Add little strawberry seeds everywhere!", path: (ctx) => {
+                        const seeds = [[250,250],[300,240],[350,250],[230,300],[280,300],[330,300],[370,300],[270,360],[320,360]];
+                        seeds.forEach(pt => {
+                            ctx.moveTo(pt[0]+3, pt[1]); ctx.ellipse(pt[0], pt[1], 3, 6, 0.2, 0, Math.PI*2);
+                        });
+                    }},
+                    { desc: "Draw cute stem topper!", path: (ctx) => {
+                        ctx.rect(292, 140, 16, 30);
+                    }}
+                ]
+            },
+            {
+                id: 'pineapple', category: 'fruits', name: 'Pineapple', emoji: '🍍',
+                steps: [
+                    { desc: "Draw an oval pineapple body shape.", path: (ctx) => { ctx.ellipse(300, 330, 90, 110, 0, 0, Math.PI * 2); } },
+                    { desc: "Draw criss-cross diamond grid pattern lines!", path: (ctx) => {
+                        for(let i = -3; i <= 3; i++) {
+                            ctx.moveTo(210, 280 + i*25); ctx.lineTo(390, 340 + i*25);
+                            ctx.moveTo(390, 280 + i*25); ctx.lineTo(210, 340 + i*25);
+                        }
+                    }},
+                    { desc: "Draw spiky palm leaves sprouting on top!", path: (ctx) => {
+                        ctx.moveTo(300, 220); ctx.lineTo(260, 100); ctx.lineTo(290, 200);
+                        ctx.lineTo(300, 80); ctx.lineTo(310, 200);
+                        ctx.lineTo(340, 100); ctx.lineTo(300, 220);
+                    }},
+                    { desc: "Add little dots inside each diamond shell!", path: (ctx) => {
+                        ctx.arc(300, 330, 4, 0, Math.PI*2); ctx.arc(270, 300, 4, 0, Math.PI*2); ctx.arc(330, 300, 4, 0, Math.PI*2);
+                    }}
+                ]
+            },
+            {
+                id: 'watermelon', category: 'fruits', name: 'Watermelon', emoji: '🍉',
+                steps: [
+                    { desc: "Draw a big juicy triangular melon slice!", path: (ctx) => {
+                        ctx.moveTo(180, 180); ctx.lineTo(420, 180); ctx.lineTo(300, 420); ctx.closePath();
+                    }},
+                    { desc: "Draw curved green rind strip along top edge.", path: (ctx) => {
+                        ctx.moveTo(160, 160); ctx.lineTo(440, 160); ctx.lineTo(420, 180); ctx.lineTo(180, 180); ctx.closePath();
+                    }},
+                    { desc: "Add teardrop watermelon seeds!", path: (ctx) => {
+                        const seeds = [[260,240],[340,240],[300,290],[270,340],[330,340]];
+                        seeds.forEach(s => { ctx.moveTo(s[0]+4, s[1]); ctx.ellipse(s[0], s[1], 4, 8, 0, 0, Math.PI*2); });
+                    }},
+                    { desc: "Add a bite taken out on side!", path: (ctx) => {
+                        ctx.arc(400, 230, 20, 0, Math.PI*2);
+                    }}
+                ]
+            },
+            { id: 'orange', category: 'fruits', name: 'Orange', emoji: '🍊', steps: [
+                { desc: "Draw a perfectly round orange circle.", path: (ctx) => { ctx.arc(300, 300, 100, 0, Math.PI*2); } },
+                { desc: "Add top stem indent and green leaf.", path: (ctx) => { ctx.arc(300, 205, 10, 0, Math.PI); ctx.ellipse(330, 185, 30, 15, -0.4, 0, Math.PI*2); } },
+                { desc: "Add citrus skin texture dots!", path: (ctx) => { ctx.arc(250, 280, 2, 0, Math.PI*2); ctx.arc(340, 320, 2, 0, Math.PI*2); ctx.arc(280, 360, 2, 0, Math.PI*2); } },
+                { desc: "Add smiling face features!", path: (ctx) => { ctx.arc(270, 290, 6, 0, Math.PI*2); ctx.moveTo(336, 290); ctx.arc(330, 290, 6, 0, Math.PI*2); ctx.moveTo(285, 320); ctx.quadraticCurveTo(300, 335, 315, 320); } }
+            ]},
+            { id: 'grapes', category: 'fruits', name: 'Grapes', emoji: '🍇', steps: [
+                { desc: "Draw top row of grape circles.", path: (ctx) => { ctx.arc(250, 250, 30, 0, Math.PI*2); ctx.moveTo(330, 250); ctx.arc(300, 250, 30, 0, Math.PI*2); ctx.moveTo(380, 250); ctx.arc(350, 250, 30, 0, Math.PI*2); } },
+                { desc: "Draw middle row of grape circles.", path: (ctx) => { ctx.arc(275, 300, 30, 0, Math.PI*2); ctx.moveTo(355, 300); ctx.arc(325, 300, 30, 0, Math.PI*2); } },
+                { desc: "Draw bottom tip grape circles.", path: (ctx) => { ctx.arc(300, 350, 30, 0, Math.PI*2); ctx.moveTo(330, 395); ctx.arc(300, 395, 25, 0, Math.PI*2); } },
+                { desc: "Draw vine stem and curly leaf on top!", path: (ctx) => { ctx.rect(293, 170, 14, 50); ctx.ellipse(340, 190, 35, 20, 0.3, 0, Math.PI*2); } }
+            ]},
+            { id: 'avocado', category: 'fruits', name: 'Avocado', emoji: '🥑', steps: [
+                { desc: "Draw an egg/pear shape avocado outer skin.", path: (ctx) => { ctx.ellipse(300, 310, 95, 125, 0, 0, Math.PI*2); } },
+                { desc: "Draw inner pale green avocado flesh outline.", path: (ctx) => { ctx.ellipse(300, 310, 75, 105, 0, 0, Math.PI*2); } },
+                { desc: "Draw a large round brown pit seed in middle!", path: (ctx) => { ctx.arc(300, 350, 40, 0, Math.PI*2); } },
+                { desc: "Draw happy face on the pit seed!", path: (ctx) => { ctx.arc(288, 345, 4, 0, Math.PI*2); ctx.moveTo(316, 345); ctx.arc(312, 345, 4, 0, Math.PI*2); ctx.moveTo(293, 360); ctx.quadraticCurveTo(300, 368, 307, 360); } }
+            ]},
+            { id: 'mango', category: 'fruits', name: 'Mango', emoji: '🥭', steps: [
+                { desc: "Draw a kidney bean oval mango shape.", path: (ctx) => { ctx.ellipse(300, 300, 80, 110, 0.3, 0, Math.PI*2); } },
+                { desc: "Draw stem notch at top.", path: (ctx) => { ctx.rect(260, 180, 12, 25); } },
+                { desc: "Add leaf attached to stem.", path: (ctx) => { ctx.ellipse(290, 180, 30, 15, -0.4, 0, Math.PI*2); } },
+                { desc: "Add shiny gradient highlight curve!", path: (ctx) => { ctx.ellipse(320, 280, 15, 45, 0.3, 0, Math.PI*2); } }
+            ]},
+            { id: 'cherry', category: 'fruits', name: 'Cherry', emoji: '🍒', steps: [
+                { desc: "Draw TWO shiny round cherry circles.", path: (ctx) => { ctx.arc(230, 340, 45, 0, Math.PI*2); ctx.moveTo(415, 340); ctx.arc(370, 340, 45, 0, Math.PI*2); } },
+                { desc: "Draw long curved twin stems connecting on top!", path: (ctx) => { ctx.moveTo(230, 295); ctx.quadraticCurveTo(270, 180, 300, 170); ctx.moveTo(370, 295); ctx.quadraticCurveTo(330, 180, 300, 170); } },
+                { desc: "Add stem leaf join point.", path: (ctx) => { ctx.ellipse(320, 175, 25, 12, -0.2, 0, Math.PI*2); } },
+                { desc: "Add shiny light reflection spots on both cherries!", path: (ctx) => { ctx.arc(215, 325, 10, 0, Math.PI*2); ctx.arc(355, 325, 10, 0, Math.PI*2); } }
+            ]},
+            { id: 'pear', category: 'fruits', name: 'Pear', emoji: '🍐', steps: [
+                { desc: "Draw bottom wide circle and top narrow neck.", path: (ctx) => { ctx.ellipse(300, 340, 95, 80, 0, 0, Math.PI*2); ctx.ellipse(300, 240, 55, 50, 0, 0, Math.PI*2); } },
+                { desc: "Smooth connecting line into pear shape.", path: (ctx) => { ctx.moveTo(250, 220); ctx.quadraticCurveTo(200, 300, 205, 340); } },
+                { desc: "Draw stem sticking out top.", path: (ctx) => { ctx.rect(294, 155, 12, 35); } },
+                { desc: "Add leaf and cute face!", path: (ctx) => { ctx.ellipse(325, 170, 25, 12, -0.3, 0, Math.PI*2); ctx.arc(280, 270, 5, 0, Math.PI*2); ctx.arc(320, 270, 5, 0, Math.PI*2); } }
+            ]},
+            { id: 'peach', category: 'fruits', name: 'Peach', emoji: '🍑', steps: [
+                { desc: "Draw plump round heart shape.", path: (ctx) => { ctx.ellipse(300, 310, 95, 90, 0, 0, Math.PI*2); } },
+                { desc: "Draw deep peach crease line down center!", path: (ctx) => { ctx.moveTo(300, 220); ctx.quadraticCurveTo(280, 310, 300, 400); } },
+                { desc: "Add stem cap and twin leaves on top.", path: (ctx) => { ctx.ellipse(280, 210, 25, 12, -0.5, 0, Math.PI*2); ctx.ellipse(320, 210, 25, 12, 0.5, 0, Math.PI*2); } },
+                { desc: "Add soft rosy cheeks!", path: (ctx) => { ctx.ellipse(240, 320, 15, 10, 0, 0, Math.PI*2); ctx.ellipse(360, 320, 15, 10, 0, 0, Math.PI*2); } }
+            ]},
+            { id: 'kiwi', category: 'fruits', name: 'Kiwi', emoji: '🥝', steps: [
+                { desc: "Draw oval slice outline.", path: (ctx) => { ctx.ellipse(300, 300, 100, 80, 0, 0, Math.PI*2); } },
+                { desc: "Draw starburst center core circle.", path: (ctx) => { ctx.ellipse(300, 300, 35, 25, 0, 0, Math.PI*2); } },
+                { desc: "Draw tiny black kiwi seeds radiating out!", path: (ctx) => {
+                    for(let i=0; i<12; i++) {
+                        let a = i * Math.PI / 6;
+                        ctx.moveTo(300 + Math.cos(a)*50, 300 + Math.sin(a)*40);
+                        ctx.arc(300 + Math.cos(a)*50, 300 + Math.sin(a)*40, 3, 0, Math.PI*2);
+                    }
+                }},
+                { desc: "Draw fuzzy brown outer skin rim!", path: (ctx) => { ctx.ellipse(300, 300, 110, 90, 0, 0, Math.PI*2); } }
+            ]},
+            { id: 'lemon', category: 'fruits', name: 'Lemon', emoji: '🍋', steps: [
+                { desc: "Draw oval lemon body with pointed tips on both ends!", path: (ctx) => { ctx.ellipse(300, 300, 100, 65, -0.2, 0, Math.PI*2); ctx.arc(190, 320, 12, 0, Math.PI*2); ctx.arc(410, 280, 12, 0, Math.PI*2); } },
+                { desc: "Draw leaf on top tip.", path: (ctx) => { ctx.ellipse(330, 215, 30, 15, -0.4, 0, Math.PI*2); } },
+                { desc: "Add citrus dots on peel.", path: (ctx) => { ctx.arc(260, 290, 2, 0, Math.PI*2); ctx.arc(340, 310, 2, 0, Math.PI*2); } },
+                { desc: "Draw winking funny sour face!", path: (ctx) => { ctx.moveTo(260, 280); ctx.lineTo(280, 290); ctx.lineTo(260, 300); ctx.arc(330, 290, 6, 0, Math.PI*2); } }
+            ]},
+            { id: 'blueberry', category: 'fruits', name: 'Blueberry', emoji: '🫐', steps: [
+                { desc: "Draw three overlapping blueberry circles.", path: (ctx) => { ctx.arc(250, 320, 50, 0, Math.PI*2); ctx.moveTo(390, 310); ctx.arc(340, 310, 55, 0, Math.PI*2); ctx.moveTo(330, 230); ctx.arc(290, 230, 45, 0, Math.PI*2); } },
+                { desc: "Draw star crown notches on top of berries!", path: (ctx) => { ctx.arc(290, 210, 12, 0, Math.PI*2); ctx.arc(340, 285, 14, 0, Math.PI*2); } },
+                { desc: "Add shiny highlights on berries.", path: (ctx) => { ctx.arc(235, 300, 8, 0, Math.PI*2); ctx.arc(325, 290, 10, 0, Math.PI*2); } },
+                { desc: "Draw small green leaf tucked behind!", path: (ctx) => { ctx.ellipse(220, 240, 25, 12, -0.6, 0, Math.PI*2); } }
+            ]},
+            { id: 'donut_fruit', category: 'fruits', name: 'Donut Sweet Fruit', emoji: '🍩', steps: [
+                { desc: "Draw big outer circle and inner donut hole!", path: (ctx) => { ctx.arc(300, 300, 110, 0, Math.PI*2); ctx.moveTo(350, 300); ctx.arc(300, 300, 40, 0, Math.PI*2); } },
+                { desc: "Draw wavy icing glaze layer dripping on top!", path: (ctx) => { ctx.arc(300, 300, 95, 0, Math.PI*2); } },
+                { desc: "Draw colorful sprinkles everywhere!", path: (ctx) => { ctx.rect(240, 220, 15, 6); ctx.rect(340, 230, 15, 6); ctx.rect(220, 320, 15, 6); ctx.rect(330, 350, 15, 6); } },
+                { desc: "Add shiny glaze highlights!", path: (ctx) => { ctx.arc(250, 230, 10, 0, Math.PI*2); } }
+            ]},
+            { id: 'coconut', category: 'fruits', name: 'Coconut', emoji: '🥥', steps: [
+                { desc: "Draw round hairy coconut shell circle.", path: (ctx) => { ctx.arc(300, 300, 100, 0, Math.PI*2); } },
+                { desc: "Draw three dark coconut eye dots on front!", path: (ctx) => { ctx.arc(270, 260, 12, 0, Math.PI*2); ctx.moveTo(342, 260); ctx.arc(330, 260, 12, 0, Math.PI*2); ctx.moveTo(312, 310); ctx.arc(300, 310, 12, 0, Math.PI*2); } },
+                { desc: "Draw fibrous shell texture spikes around edge.", path: (ctx) => { ctx.arc(300, 300, 106, 0, Math.PI*2); } },
+                { desc: "Draw tropical straw poking into top!", path: (ctx) => { ctx.rect(330, 140, 12, 100); } }
+            ]},
+            { id: 'broccoli', category: 'fruits', name: 'Broccoli', emoji: '🥦', steps: [
+                { desc: "Draw thick tree-trunk stem.", path: (ctx) => { ctx.rect(270, 320, 60, 100); } },
+                { desc: "Draw fluffy afro cloud treetop tree canopy!", path: (ctx) => { ctx.arc(300, 240, 90, 0, Math.PI*2); } },
+                { desc: "Add inner floret cloud swirls inside!", path: (ctx) => { ctx.arc(260, 220, 35, 0, Math.PI*2); ctx.arc(330, 220, 35, 0, Math.PI*2); } },
+                { desc: "Draw cute face on stem!", path: (ctx) => { ctx.arc(285, 360, 5, 0, Math.PI*2); ctx.arc(315, 360, 5, 0, Math.PI*2); ctx.moveTo(290, 380); ctx.quadraticCurveTo(300, 390, 310, 380); } }
+            ]},
+            { id: 'carrot', category: 'fruits', name: 'Carrot', emoji: '🥕', steps: [
+                { desc: "Draw long pointy carrot triangle shape.", path: (ctx) => { ctx.moveTo(250, 180); ctx.lineTo(350, 180); ctx.lineTo(300, 440); ctx.closePath(); } },
+                { desc: "Draw bushy green leafy tops on head!", path: (ctx) => { ctx.ellipse(270, 130, 20, 50, -0.3, 0, Math.PI*2); ctx.ellipse(300, 110, 20, 50, 0, 0, Math.PI*2); ctx.ellipse(330, 130, 20, 50, 0.3, 0, Math.PI*2); } },
+                { desc: "Draw horizontal carrot ridge lines.", path: (ctx) => { ctx.moveTo(270, 230); ctx.lineTo(310, 230); ctx.moveTo(280, 290); ctx.lineTo(320, 290); ctx.moveTo(285, 350); ctx.lineTo(310, 350); } },
+                { desc: "Add cute kawaii eyes and smile!", path: (ctx) => { ctx.arc(285, 205, 5, 0, Math.PI*2); ctx.arc(315, 205, 5, 0, Math.PI*2); ctx.moveTo(295, 215); ctx.quadraticCurveTo(300, 222, 305, 215); } }
+            ]},
+            { id: 'corn', category: 'fruits', name: 'Corn', emoji: '🌽', steps: [
+                { desc: "Draw long oval cob shape.", path: (ctx) => { ctx.ellipse(300, 300, 60, 120, 0, 0, Math.PI*2); } },
+                { desc: "Draw kernel grid lines across the cob!", path: (ctx) => {
+                    for(let y=200; y<400; y+=20) { ctx.moveTo(245, y); ctx.lineTo(355, y); }
+                    ctx.moveTo(280, 180); ctx.lineTo(280, 420); ctx.moveTo(320, 180); ctx.lineTo(320, 420);
+                }},
+                { desc: "Draw husk leaves peeling off bottom sides!", path: (ctx) => { ctx.ellipse(220, 340, 35, 90, -0.4, 0, Math.PI*2); ctx.ellipse(380, 340, 35, 90, 0.4, 0, Math.PI*2); } },
+                { desc: "Add silk hairs on top!", path: (ctx) => { ctx.moveTo(300, 180); ctx.lineTo(290, 130); ctx.moveTo(300, 180); ctx.lineTo(310, 130); } }
+            ]},
+            { id: 'eggplant', category: 'fruits', name: 'Eggplant', emoji: '🍆', steps: [
+                { desc: "Draw teardrop curvy eggplant body.", path: (ctx) => { ctx.moveTo(260, 200); ctx.quadraticCurveTo(180, 360, 300, 420); ctx.quadraticCurveTo(420, 360, 300, 200); ctx.closePath(); } },
+                { desc: "Draw spiky green cap stem on top!", path: (ctx) => { ctx.rect(280, 140, 35, 30); ctx.moveTo(260, 200); ctx.lineTo(340, 200); } },
+                { desc: "Add glossy shiny highlight curves!", path: (ctx) => { ctx.ellipse(250, 310, 18, 50, 0.3, 0, Math.PI*2); } },
+                { desc: "Draw cute sleeping face eyes!", path: (ctx) => { ctx.arc(280, 280, 6, Math.PI, 0); ctx.moveTo(326, 280); ctx.arc(320, 280, 6, Math.PI, 0); } }
+            ]},
+            { id: 'pumpkin', category: 'fruits', name: 'Pumpkin', emoji: '🎃', steps: [
+                { desc: "Draw wide fat center oval.", path: (ctx) => { ctx.ellipse(300, 320, 60, 90, 0, 0, Math.PI*2); } },
+                { desc: "Draw side lobe ovals to make pumpkin round!", path: (ctx) => { ctx.ellipse(240, 320, 50, 85, 0, 0, Math.PI*2); ctx.ellipse(360, 320, 50, 85, 0, 0, Math.PI*2); } },
+                { desc: "Draw sturdy stem on top!", path: (ctx) => { ctx.rect(285, 180, 30, 50); } },
+                { desc: "Add curly vine tendril and happy face!", path: (ctx) => { ctx.moveTo(315, 200); ctx.quadraticCurveTo(380, 160, 360, 220); ctx.arc(260, 300, 7, 0, Math.PI*2); ctx.arc(340, 300, 7, 0, Math.PI*2); ctx.moveTo(270, 340); ctx.quadraticCurveTo(300, 370, 330, 340); } }
+            ]},
+            { id: 'mushroom', category: 'fruits', name: 'Mushroom', emoji: '🍄', steps: [
+                { desc: "Draw giant umbrella cap dome!", path: (ctx) => { ctx.arc(300, 260, 110, Math.PI, 0); ctx.closePath(); } },
+                { desc: "Draw thick mushroom stem underneath.", path: (ctx) => { ctx.rect(260, 260, 80, 110); } },
+                { desc: "Draw round polka dots on cap!", path: (ctx) => { ctx.arc(250, 200, 20, 0, Math.PI*2); ctx.arc(330, 190, 22, 0, Math.PI*2); ctx.arc(300, 240, 15, 0, Math.PI*2); } },
+                { desc: "Add cute face on stem!", path: (ctx) => { ctx.arc(285, 310, 6, 0, Math.PI*2); ctx.arc(315, 310, 6, 0, Math.PI*2); ctx.moveTo(290, 330); ctx.quadraticCurveTo(300, 340, 310, 330); } }
+            ]},
+            { id: 'cactus', category: 'fruits', name: 'Cactus', emoji: '🌵', steps: [
+                { desc: "Draw center main cactus stem tall oval.", path: (ctx) => { ctx.ellipse(300, 300, 45, 110, 0, 0, Math.PI*2); } },
+                { desc: "Draw side arm branches curving up!", path: (ctx) => { ctx.moveTo(255, 300); ctx.lineTo(210, 300); ctx.lineTo(210, 230); ctx.moveTo(345, 270); ctx.lineTo(390, 270); ctx.lineTo(390, 200); } },
+                { desc: "Draw cute flower blooming on top!", path: (ctx) => { ctx.arc(300, 185, 18, 0, Math.PI*2); } },
+                { desc: "Add spike prickles along stems!", path: (ctx) => { ctx.moveTo(250, 250); ctx.lineTo(240, 250); ctx.moveTo(350, 320); ctx.lineTo(360, 320); } }
+            ]},
+            { id: 'cupcake_fruit', category: 'fruits', name: 'Cupcake Fruit', emoji: '🧁', steps: [
+                { desc: "Draw wrapper cup base.", path: (ctx) => { ctx.moveTo(220, 300); ctx.lineTo(240, 420); ctx.lineTo(360, 420); ctx.lineTo(380, 300); ctx.closePath(); } },
+                { desc: "Draw fluffy cloud frosting swirl top!", path: (ctx) => { ctx.arc(300, 260, 90, Math.PI, 0); ctx.arc(250, 300, 35, 0, Math.PI*2); ctx.arc(350, 300, 35, 0, Math.PI*2); } },
+                { desc: "Draw cherry on top!", path: (ctx) => { ctx.arc(300, 150, 25, 0, Math.PI*2); ctx.moveTo(300, 125); ctx.quadraticCurveTo(330, 90, 340, 80); } },
+                { desc: "Add colorful sprinkles on frosting!", path: (ctx) => { ctx.rect(260, 220, 10, 5); ctx.rect(320, 230, 10, 5); ctx.rect(280, 270, 10, 5); } }
+            ]}
+        ];
+
+        // Colors Palette for Kids
+        const PALETTE_COLORS = [
+            '#000000', '#64748B', '#EF4444', '#F97316', '#F59E0B', '#10B981',
+            '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E',
+            '#78350F', '#B45309', '#FDE047', '#A7F3D0', '#BAE6FD', '#DDD6FE'
+        ];
+
+        // State Variables
+        let activeDoodle = DOODLE_DATABASE[0];
+        let currentStepIndex = 0;
+        let activeMode = 'draw'; // 'draw' or 'color'
+        let activeTool = 'pencil'; // 'pencil', 'bucket', 'marker', 'rainbow', 'eraser', 'sticker'
+        let primaryColor = '#000000';
+        let brushSize = 8;
+        let selectedSticker = '⭐';
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
+        let hueOffset = 0; // For rainbow tool
+
+        // Canvas Elements & Contexts
+        const paintCanvas = document.getElementById('paintCanvas');
+        const paintCtx = paintCanvas.getContext('2d');
+        const guideCanvas = document.getElementById('guideCanvas');
+        const guideCtx = guideCanvas.getContext('2d');
+
+        // Undo/Redo History Stacks
+        let undoStack = [];
+        let redoStack = [];
+
+        window.addEventListener('load', () => {
+            renderPalette();
+            renderGallery('all');
+            initCanvas();
+        });
+
+        function renderPalette() {
+            const container = document.getElementById('paletteGrid');
+            container.innerHTML = '';
+            PALETTE_COLORS.forEach(color => {
+                const btn = document.createElement('button');
+                btn.className = `w-7 h-7 rounded-full border-2 border-white shadow-sm bouncy-btn cursor-pointer transition transform hover:scale-110`;
+                btn.style.backgroundColor = color;
+                btn.onclick = () => setColor(color);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderGallery(filterCategory = 'all', filterQuery = '') {
+            const grid = document.getElementById('doodleGrid');
+            grid.innerHTML = '';
+
+            const items = DOODLE_DATABASE.filter(item => {
+                const matchCategory = filterCategory === 'all' || item.category === filterCategory;
+                const matchQuery = item.name.toLowerCase().includes(filterQuery.toLowerCase());
+                return matchCategory && matchQuery;
+            });
+
+            document.getElementById('doodleCountBadge').textContent = `Showing ${items.length} items`;
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-3xl p-4 shadow-md border-2 border-amber-200 hover:border-indigo-400 bouncy-btn cursor-pointer flex flex-col items-center justify-between text-center space-y-2 group";
+                card.onclick = () => openStudio(item);
+
+                card.innerHTML = `
+                    <div class="text-5xl group-hover:scale-125 transition transform duration-200 py-2">${item.emoji}</div>
+                    <h3 class="font-black text-indigo-950 text-base group-hover:text-indigo-600">${item.name}</h3>
+                    <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${item.category === 'animals' ? 'bg-pink-100 text-pink-700' : 'bg-emerald-100 text-emerald-700'}">
+                        ${item.category === 'animals' ? 'Animal' : 'Fruit'}
+                    </span>
+                    <button class="w-full bg-yellow-400 group-hover:bg-yellow-500 text-indigo-950 font-extrabold text-xs py-1.5 rounded-xl shadow-sm border-b-2 border-yellow-600">
+                        Draw Step-by-Step
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCategory(cat) {
+            playSound('pop');
+            document.querySelectorAll('.category-tab').forEach(btn => {
+                btn.className = "category-tab text-white hover:bg-indigo-700 px-4 py-2 rounded-xl font-bold transition";
+            });
+            if (cat === 'all') document.getElementById('tabAll').className = "category-tab active bg-yellow-400 text-indigo-950 px-4 py-2 rounded-xl font-bold transition shadow-sm";
+            if (cat === 'animals') document.getElementById('tabAnimals').className = "category-tab active bg-yellow-400 text-indigo-950 px-4 py-2 rounded-xl font-bold transition shadow-sm";
+            if (cat === 'fruits') document.getElementById('tabFruits').className = "category-tab active bg-yellow-400 text-indigo-950 px-4 py-2 rounded-xl font-bold transition shadow-sm";
+            
+            const searchVal = document.getElementById('searchInput').value;
+            renderGallery(cat, searchVal);
+        }
+
+        function searchDoodles() {
+            const query = document.getElementById('searchInput').value;
+            const activeTab = document.querySelector('.category-tab.active').id;
+            let cat = 'all';
+            if (activeTab === 'tabAnimals') cat = 'animals';
+            if (activeTab === 'tabFruits') cat = 'fruits';
+            renderGallery(cat, query);
+        }
+
+        function goHome() {
+            playSound('pop');
+            document.getElementById('galleryView').classList.remove('hidden');
+            document.getElementById('studioView').classList.add('hidden');
+        }
+
+        function openStudio(item) {
+            playSound('pop');
+            activeDoodle = item;
+            currentStepIndex = 0;
+
+            document.getElementById('activeEmoji').textContent = item.emoji;
+            document.getElementById('activeTitle').textContent = `${item.name} Studio`;
+
+            document.getElementById('galleryView').classList.add('hidden');
+            document.getElementById('studioView').classList.remove('hidden');
+
+            // Reset stacks
+            undoStack = [];
+            redoStack = [];
+
+            // Clear Paint Canvas
+            paintCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+            saveState();
+
+            switchStudioMode('draw');
+            updateStepGuide();
+        }
+
+        function switchStudioMode(mode) {
+            playSound('pop');
+            activeMode = mode;
+            const drawBtn = document.getElementById('modeDrawBtn');
+            const colorBtn = document.getElementById('modeColorBtn');
+            const stepControls = document.getElementById('stepGuideControls');
+
+            if (mode === 'draw') {
+                drawBtn.className = "bouncy-btn px-4 py-1.5 rounded-lg font-bold text-sm flex items-center space-x-2 bg-indigo-600 text-white shadow-sm";
+                colorBtn.className = "bouncy-btn px-4 py-1.5 rounded-lg font-bold text-sm flex items-center space-x-2 text-slate-600 hover:text-indigo-600";
+                stepControls.classList.remove('hidden');
+                guideCanvas.style.display = 'block';
+                setTool('pencil');
+            } else {
+                colorBtn.className = "bouncy-btn px-4 py-1.5 rounded-lg font-bold text-sm flex items-center space-x-2 bg-indigo-600 text-white shadow-sm";
+                drawBtn.className = "bouncy-btn px-4 py-1.5 rounded-lg font-bold text-sm flex items-center space-x-2 text-slate-600 hover:text-indigo-600";
+                stepControls.classList.add('hidden');
+                guideCanvas.style.display = 'none';
+                setTool('bucket');
+            }
+        }
+
+        function changeStep(delta) {
+            playSound('pop');
+            currentStepIndex += delta;
+            if (currentStepIndex < 0) currentStepIndex = 0;
+            if (currentStepIndex >= activeDoodle.steps.length) currentStepIndex = activeDoodle.steps.length - 1;
+            updateStepGuide();
+        }
+
+        function updateStepGuide() {
+            const total = activeDoodle.steps.length;
+            const step = activeDoodle.steps[currentStepIndex];
+
+            document.getElementById('stepCounter').textContent = `Step ${currentStepIndex + 1} / ${total}`;
+            document.getElementById('stepInstruction').textContent = step.desc;
+
+            document.getElementById('prevStepBtn').disabled = (currentStepIndex === 0);
+            document.getElementById('nextStepBtn').disabled = (currentStepIndex === total - 1);
+
+            renderGuideOverlay();
+        }
+
+        function renderGuideOverlay() {
+            guideCtx.clearRect(0, 0, guideCanvas.width, guideCanvas.height);
+
+            for (let i = 0; i <= currentStepIndex; i++) {
+                const step = activeDoodle.steps[i];
+                guideCtx.beginPath();
+                guideCtx.lineWidth = (i === currentStepIndex) ? 6 : 4;
+                guideCtx.strokeStyle = (i === currentStepIndex) ? '#4F46E5' : '#CBD5E1';
+                guideCtx.lineCap = 'round';
+                guideCtx.lineJoin = 'round';
+                
+                if (i === currentStepIndex) {
+                    guideCtx.setLineDash([8, 8]); // Dashed active step for trace guidance
+                } else {
+                    guideCtx.setLineDash([]);
+                }
+
+                step.path(guideCtx);
+                guideCtx.stroke();
+            }
+        }
+
+        function initCanvas() {
+            // Touch & Mouse Listeners
+            paintCanvas.addEventListener('mousedown', startDrawing);
+            paintCanvas.addEventListener('mousemove', draw);
+            paintCanvas.addEventListener('mouseup', stopDrawing);
+            paintCanvas.addEventListener('mouseleave', stopDrawing);
+
+            paintCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            paintCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            paintCanvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function getCanvasCoords(e) {
+            const rect = paintCanvas.getBoundingClientRect();
+            const scaleX = paintCanvas.width / rect.width;
+            const scaleY = paintCanvas.height / rect.height;
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const coords = getCanvasCoords(e);
+            lastX = coords.x;
+            lastY = coords.y;
+
+            if (activeTool === 'bucket') {
+                floodFill(Math.round(coords.x), Math.round(coords.y), hexToRgba(primaryColor));
+                saveState();
+                isDrawing = false;
+            } else if (activeTool === 'sticker') {
+                placeSticker(coords.x, coords.y);
+                saveState();
+                isDrawing = false;
+            } else {
+                playSound('brush');
+                draw(e);
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const coords = getCanvasCoords(e);
+
+            paintCtx.beginPath();
+            paintCtx.moveTo(lastX, lastY);
+            paintCtx.lineTo(coords.x, coords.y);
+
+            if (activeTool === 'pencil') {
+                paintCtx.strokeStyle = primaryColor;
+                paintCtx.lineWidth = brushSize;
+                paintCtx.globalAlpha = 1.0;
+                paintCtx.lineCap = 'round';
+                paintCtx.lineJoin = 'round';
+            } else if (activeTool === 'marker') {
+                paintCtx.strokeStyle = primaryColor;
+                paintCtx.lineWidth = brushSize * 2;
+                paintCtx.globalAlpha = 0.4;
+                paintCtx.lineCap = 'square';
+            } else if (activeTool === 'rainbow') {
+                hueOffset = (hueOffset + 5) % 360;
+                paintCtx.strokeStyle = `hsl(${hueOffset}, 100%, 50%)`;
+                paintCtx.lineWidth = brushSize * 1.5;
+                paintCtx.globalAlpha = 1.0;
+                paintCtx.lineCap = 'round';
+            } else if (activeTool === 'eraser') {
+                paintCtx.globalCompositeOperation = 'destination-out';
+                paintCtx.lineWidth = brushSize * 3;
+                paintCtx.lineCap = 'round';
+            }
+
+            paintCtx.stroke();
+            paintCtx.globalCompositeOperation = 'source-over'; // Reset blend mode
+
+            lastX = coords.x;
+            lastY = coords.y;
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                saveState();
+            }
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            startDrawing(e);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            draw(e);
+        }
+
+        // Tools Management
+        function setTool(tool) {
+            playSound('pop');
+            activeTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.className = "tool-btn bg-slate-50 border-2 border-slate-200 text-slate-700 p-2.5 rounded-xl font-bold text-xs flex items-center space-x-2";
+            });
+
+            const activeBtn = document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1));
+            if (activeBtn) {
+                activeBtn.className = "tool-btn bg-indigo-50 border-2 border-indigo-500 text-indigo-900 p-2.5 rounded-xl font-bold text-xs flex items-center space-x-2";
+            }
+
+            document.getElementById('stickerPicker').className = (tool === 'sticker') ? "flex flex-col space-y-2 bg-purple-50 p-2.5 rounded-2xl border border-purple-200" : "hidden";
+        }
+
+        function setColor(hex) {
+            playSound('pop');
+            primaryColor = hex;
+            document.getElementById('customColorPicker').value = hex;
+        }
+
+        function updateBrushSize(val) {
+            brushSize = parseInt(val);
+            document.getElementById('brushSizeVal').textContent = `${val}px`;
+        }
+
+        function setSticker(emoji) {
+            playSound('pop');
+            selectedSticker = emoji;
+        }
+
+        function placeSticker(x, y) {
+            playSound('pop');
+            paintCtx.font = `${brushSize * 4}px Fredoka`;
+            paintCtx.textAlign = 'center';
+            paintCtx.textBaseline = 'middle';
+            paintCtx.fillText(selectedSticker, x, y);
+        }
+
+        function floodFill(startX, startY, fillColor) {
+            const imgData = paintCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height);
+            const data = imgData.data;
+            const width = paintCanvas.width;
+            const height = paintCanvas.height;
+
+            const targetIdx = (startY * width + startX) * 4;
+            const targetColor = [
+                data[targetIdx],
+                data[targetIdx + 1],
+                data[targetIdx + 2],
+                data[targetIdx + 3]
+            ];
+
+            // Don't fill if color is nearly identical
+            if (colorMatch(targetColor, fillColor, 10)) return;
+
+            const pixelStack = [[startX, startY]];
+
+            while (pixelStack.length) {
+                const newPos = pixelStack.pop();
+                const x = newPos[0];
+                let y = newPos[1];
+
+                let pixelPos = (y * width + x) * 4;
+
+                while (y >= 0 && colorMatch(getPixelColor(data, pixelPos), targetColor, 30)) {
+                    y--;
+                    pixelPos -= width * 4;
+                }
+
+                pixelPos += width * 4;
+                y++;
+
+                let reachLeft = false;
+                let reachRight = false;
+
+                while (y < height && colorMatch(getPixelColor(data, pixelPos), targetColor, 30)) {
+                    setPixelColor(data, pixelPos, fillColor);
+
+                    if (x > 0) {
+                        if (colorMatch(getPixelColor(data, pixelPos - 4), targetColor, 30)) {
+                            if (!reachLeft) {
+                                pixelStack.push([x - 1, y]);
+                                reachLeft = true;
+                            }
+                        } else if (reachLeft) {
+                            reachLeft = false;
+                        }
+                    }
+
+                    if (x < width - 1) {
+                        if (colorMatch(getPixelColor(data, pixelPos + 4), targetColor, 30)) {
+                            if (!reachRight) {
+                                pixelStack.push([x + 1, y]);
+                                reachRight = true;
+                            }
+                        } else if (reachRight) {
+                            reachRight = false;
+                        }
+                    }
+
+                    y++;
+                    pixelPos += width * 4;
+                }
+            }
+
+            paintCtx.putImageData(imgData, 0, 0);
+            playSound('pop');
+        }
+
+        function getPixelColor(data, idx) {
+            return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+        }
+
+        function setPixelColor(data, idx, color) {
+            data[idx] = color[0];
+            data[idx + 1] = color[1];
+            data[idx + 2] = color[2];
+            data[idx + 3] = color[3];
+        }
+
+        function colorMatch(c1, c2, tolerance) {
+            return Math.abs(c1[0] - c2[0]) <= tolerance &&
+                   Math.abs(c1[1] - c2[1]) <= tolerance &&
+                   Math.abs(c1[2] - c2[2]) <= tolerance &&
+                   Math.abs(c1[3] - c2[3]) <= tolerance;
+        }
+
+        function hexToRgba(hex) {
+            let c = hex.replace('#', '');
+            if (c.length === 3) c = c.split('').map(x => x + x).join('');
+            const num = parseInt(c, 16);
+            return [(num >> 16) & 255, (num >> 8) & 255, num & 255, 255];
+        }
+
+        function saveState() {
+            undoStack.push(paintCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height));
+            if (undoStack.length > 20) undoStack.shift();
+            redoStack = []; // Clear redo on new action
+        }
+
+        function undo() {
+            if (undoStack.length > 1) {
+                playSound('pop');
+                redoStack.push(undoStack.pop());
+                const state = undoStack[undoStack.length - 1];
+                paintCtx.putImageData(state, 0, 0);
+            }
+        }
+
+        function redo() {
+            if (redoStack.length > 0) {
+                playSound('pop');
+                const state = redoStack.pop();
+                undoStack.push(state);
+                paintCtx.putImageData(state, 0, 0);
+            }
+        }
+
+        function clearCanvas() {
+            playSound('pop');
+            paintCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+            saveState();
+        }
+
+        function triggerFinishCelebration() {
+            playSound('cheer');
+            confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+        }
+
+        function downloadImage() {
+            playSound('pop');
+            // Merge paint canvas onto white background canvas for saving
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = 600;
+            exportCanvas.height = 600;
+            const expCtx = exportCanvas.getContext('2d');
+
+            expCtx.fillStyle = '#FFFFFF';
+            expCtx.fillRect(0, 0, 600, 600);
+            expCtx.drawImage(paintCanvas, 0, 0);
+
+            const link = document.createElement('a');
+            link.download = `${activeDoodle.name}_DoodleJoy.png`;
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function printDrawing() {
+            playSound('pop');
+            const printWin = window.open('', '_blank');
+            printWin.document.write(`
+                <html>
+                    <head><title>Print ${activeDoodle.name} Worksheet</title></head>
+                    <body style="text-align:center; font-family:sans-serif; padding:20px;">
+                        <h2>DoodleJoy! - ${activeDoodle.name} Worksheet</h2>
+                        <img src="${paintCanvas.toDataURL()}" style="border:2px solid #000; width:80%; max-width:500px;"/>
+                        <p>Great Job!</p>
+                        <script>window.onload = function() { window.print(); window.close(); }<\/script>
+                    </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+    </script>
+</body>
+</html>
